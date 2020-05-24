@@ -1,0 +1,32 @@
+<Cabecera>
+	<Registro>
+		<Socio>7</Socio>
+		<Conexion>1</Conexion>
+		<Periodo>201910</Periodo>
+		<Grupo_Fact>Servicios                     </Grupo_Fact>
+		<Letra> </Letra>
+		<Pto_Venta>0</Pto_Venta>
+		<Numero>3335866</Numero>
+		<Fecha_Emision>30/10/2019</Fecha_Emision>
+		<Fecha_Vto>29/11/2019</Fecha_Vto>
+		<Importe>4725,68</Importe>
+		<Factura>0000010001000003335866 </Factura>
+		<Pagada>0</Pagada>
+	</Registro>
+		<Registro>
+		<Socio>7</Socio>
+		<Conexion>1</Conexion>
+		<Periodo>202010</Periodo>
+		<Grupo_Fact>Servicios                     </Grupo_Fact>
+		<Letra> </Letra>
+		<Pto_Venta>0</Pto_Venta>
+		<Numero>3335867</Numero>
+		<Fecha_Emision>30/10/2019</Fecha_Emision>
+		<Fecha_Vto>29/11/2019</Fecha_Vto>
+		<Importe>4000,68</Importe>
+		<Factura>0000010001000003335867 </Factura>
+		<Pagada>1</Pagada>
+	</Registro>
+</Cabecera>
+	
+		
