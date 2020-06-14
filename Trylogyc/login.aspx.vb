@@ -36,11 +36,20 @@ Public Class login
                     myUser.email = daUser.Tables(0).Rows(0).Item("userEmail")
                     myUser.foto = daUser.Tables(0).Rows(0).Item("foto")
                     myUser.ruta = daUser.Tables(0).Rows(0).Item("ruta")
+                    If daUser.Tables(0).Rows(0).Item("EnviaFacturaMail") IsNot DBNull.Value AndAlso Convert.ToBoolean(daUser.Tables(0).Rows(0).Item("EnviaFacturaMail")) = True Then
+                        myUser.EnviarFacturaEmail = True
+                    Else
+                        myUser.EnviarFacturaEmail = False
+                    End If
+
                     If myUser.username.ToLower = Me.txtemail.Text.ToLower And myUser.passWord = Me.txtpassword.Text Then 'la contraseña coincide
                         Session("logueado") = True
                         Session("IDUsuario") = myUser.IDUsuario
                         Session("xmlSocio") = myUser.XmlSocio
                         Session("nomUsuario") = myUser.username
+                        Session("userEmail") = myUser.email
+                        Session("aceptaFacturaMail") = myUser.EnviarFacturaEmail
+
                         ' aca me fijo que conexiones tiene realcionadas. Esto no estaba agrego Marcelo
                         Dim daConexiones As DataSet = myContext.GetSocioConexion(myUser.IDUsuario)
                         Dim filtroConexiones As String = "", I As Integer = 0

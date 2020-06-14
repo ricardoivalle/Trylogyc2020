@@ -11,23 +11,23 @@ Option Strict On
 Option Explicit On
 
 
-Partial Public Class _Error
-    
+Partial Public Class PagarFactura
+
     '''<summary>
-    '''Label1 control.
+    '''preferenceID control.
     '''</summary>
     '''<remarks>
     '''Auto-generated field.
     '''To modify move field declaration from designer file to code-behind file.
     '''</remarks>
-    Protected WithEvents Label1 As Global.System.Web.UI.WebControls.Label
-    
+    Protected WithEvents preferenceID As Global.System.Web.UI.WebControls.HiddenField
+
     '''<summary>
-    '''Label2 control.
+    '''btnRegresar control.
     '''</summary>
     '''<remarks>
     '''Auto-generated field.
     '''To modify move field declaration from designer file to code-behind file.
     '''</remarks>
-    Protected WithEvents Label2 As Global.System.Web.UI.WebControls.Label
+    Protected WithEvents btnRegresar As Global.System.Web.UI.WebControls.Button
 End Class

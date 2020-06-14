@@ -15,6 +15,13 @@ Namespace DAL
     Public Class TrylogycContext
         Inherits DbContext
 
+        Public Enum EstadosPagos
+            Creado = 0
+            Aprobado = 1
+            Rechazado = 2
+            Demorado = 3
+        End Enum
+
         Private response As Object
         Public Property ClientScript As Object
 
@@ -194,7 +201,6 @@ Namespace DAL
                 Return ds
             End Try
         End Function
-
         Public Function GetSocios() As DataSet
             Dim dataSet1 As DataSet = New DataSet
             Try
@@ -213,7 +219,6 @@ Namespace DAL
                 Return dataSet1
             End Try
         End Function
-
         Public Function GetUsuarioSocio(ByVal codSocio As Int32, email As String) As Int32
             Dim con As New SqlConnection(ConfigurationManager.ConnectionStrings("TrylogycContext").ToString)
             Dim command As New SqlCommand("", con)
@@ -305,8 +310,7 @@ Namespace DAL
             dA.Dispose()
             con.Close()
         End Function
-
-        Public Function PutUsuario(ByVal email As String, ByVal codSocio As Int32, ByVal idConexion As Int32) As DataSet
+        Public Function PutUsuario(ByVal email As String, ByVal codSocio As Int32, ByVal idConexion As Int32, ByVal aceptaFacturaEmail As Boolean) As DataSet
             Dim con As New SqlConnection(ConfigurationManager.ConnectionStrings("TrylogycContext").ToString)
             Dim command As New SqlCommand("", con)
             Dim dA As New SqlDataAdapter()
@@ -316,6 +320,7 @@ Namespace DAL
             Dim Prmparametro1 As New SqlParameter
             Dim Prmparametro2 As New SqlParameter
             Dim Prmparametro3 As New SqlParameter
+            Dim Prmparametro4 As New SqlParameter
             With Prmparametro1
                 .ParameterName = "email"
                 .SqlDbType = Data.SqlDbType.VarChar
@@ -331,12 +336,18 @@ Namespace DAL
                 .SqlDbType = Data.SqlDbType.Int
                 .Value = idConexion
             End With
+            With Prmparametro4
+                .ParameterName = "aceptaFactura"
+                .SqlDbType = Data.SqlDbType.Bit
+                .Value = aceptaFacturaEmail
+            End With
             With command
                 .CommandType = CommandType.StoredProcedure
                 .CommandText = "INS_USUARIO"
                 .Parameters.Add(Prmparametro1)
                 .Parameters.Add(Prmparametro2)
                 .Parameters.Add(Prmparametro3)
+                .Parameters.Add(Prmparametro4)
             End With
 
             Try
@@ -543,7 +554,10 @@ Namespace DAL
                 Return ds
             End Try
         End Function
-        Public Function UpdUsuario(ByVal idUsuario As Int32, ByVal passWord As String) As DataSet
+        Public Function UpdUsuario(ByVal user As Usuario) As DataSet
+            Dim idUsuario As Int32 = user.IDUsuario
+            Dim password As String = user.passWord
+            Dim enviaFacturaMail As Boolean = user.EnviarFacturaEmail
             Dim con As New SqlConnection(ConfigurationManager.ConnectionStrings("TrylogycContext").ToString)
             Dim command As New SqlCommand("", con)
             Dim dA As New SqlDataAdapter()
@@ -552,7 +566,7 @@ Namespace DAL
             Dim sql As String = Nothing
             Dim Prmparametro1 As New SqlParameter
             Dim Prmparametro2 As New SqlParameter
-
+            Dim Prmparametro3 As New SqlParameter
             With Prmparametro1
                 .ParameterName = "idUsuario"
                 .SqlDbType = Data.SqlDbType.Int
@@ -563,11 +577,17 @@ Namespace DAL
                 .SqlDbType = Data.SqlDbType.VarChar
                 .Value = passWord
             End With
+            With Prmparametro3
+                .ParameterName = "enviaFacturaMail"
+                .SqlDbType = Data.SqlDbType.Bit
+                .Value = enviaFacturaMail
+            End With
             With command
                 .CommandType = CommandType.StoredProcedure
                 .CommandText = "UPD_USUARIO_CONTRASENA"
                 .Parameters.Add(Prmparametro1)
                 .Parameters.Add(Prmparametro2)
+                .Parameters.Add(Prmparametro3)
             End With
 
             Try
@@ -587,6 +607,128 @@ Namespace DAL
                 ds.Tables(0).Rows(0).Item(0) = ex.HResult
                 ds.Tables(0).Rows(0).Item(1) = ex.Message
                 Return ds
+            End Try
+        End Function
+        Public Function PutPago(ByVal nroFactura As String, ByVal importe As Decimal, ByVal preferenceId As String, ByVal idSocio As Int32, ByVal idConexion As Int32) As Boolean
+            Dim con As New SqlConnection(ConfigurationManager.ConnectionStrings("TrylogycContext").ToString)
+            Dim query As String = "INSERT INTO Pagos(Estado,NumeroFactura,Preference,Collection,MerchantOrder,Importe,FechaCreacion,FechaActualizacion,idSocio,idConexion)" &
+                                  "VALUES(@estado,@numeroFactura,@preference,null,null,@importe,GETDATE(),GETDATE(),@idSocio,@idConexion)"
+
+            Dim command As New SqlCommand(query, con)
+            command.Parameters.AddWithValue("@estado", EstadosPagos.Creado)
+            command.Parameters.AddWithValue("@numeroFactura", nroFactura)
+            command.Parameters.AddWithValue("@preference", preferenceId)
+            command.Parameters.AddWithValue("@importe", importe)
+            command.Parameters.AddWithValue("@idSocio", idSocio)
+            command.Parameters.AddWithValue("@idConexion", idConexion)
+
+            Dim dA As New SqlDataAdapter()
+            Dim ds As New DataSet()
+            Dim i As Integer = 0
+            Dim sql As String = Nothing
+
+            Try
+                con.Open()
+                Dim reader As SqlDataReader = command.ExecuteReader()
+                While reader.Read()
+
+                End While
+
+                reader.Close()
+                command.Dispose()
+                con.Close()
+                Return True
+            Catch ex As Exception
+                Return False
+            End Try
+        End Function
+        Public Function UpdPago(ByVal preferenceId As String, ByVal estado As Int32, ByVal collection As String, ByVal merchantOrder As String) As Boolean
+            Dim con As New SqlConnection(ConfigurationManager.ConnectionStrings("TrylogycContext").ToString)
+            Dim query As String = "UPDATE Pagos SET Estado = @estado, Collection = @collection, MerchantOrder=@merchantOrder,FechaActualizacion = GETDATE()"
+            If estado = Convert.ToInt32(EstadosPagos.Aprobado) Then
+                query = query & ", procesado = 0"
+            End If
+            query = query & "WHERE preference = @preference"
+
+            Dim prmCollection As Object
+            Dim prmMerchantOrder As Object
+
+            If String.IsNullOrEmpty(collection) Then
+                prmCollection = DBNull.Value
+            Else
+                prmCollection = collection
+            End If
+
+            If String.IsNullOrEmpty(merchantOrder) Then
+                prmMerchantOrder = DBNull.Value
+            Else
+                prmMerchantOrder = merchantOrder
+            End If
+
+            Dim command As New SqlCommand(query, con)
+            command.Parameters.AddWithValue("@estado", estado)
+            command.Parameters.AddWithValue("@collection", prmCollection)
+            command.Parameters.AddWithValue("@merchantOrder", prmMerchantOrder)
+            command.Parameters.AddWithValue("@preference", preferenceId)
+
+
+            Dim dA As New SqlDataAdapter()
+            Dim ds As New DataSet()
+            Dim i As Integer = 0
+            Dim sql As String = Nothing
+
+            Try
+                con.Open()
+                Dim reader As SqlDataReader = command.ExecuteReader()
+                While reader.Read()
+
+                End While
+
+                reader.Close()
+                command.Dispose()
+                con.Close()
+                Return True
+            Catch ex As Exception
+                Return False
+            End Try
+        End Function
+        Public Function GetPago(ByVal idSocio As Int32, ByVal idConexion As Int32, ByVal numFact As String, ByVal importe As Decimal) As Boolean
+            Dim pagosCount As Int32 = 0
+            Dim con As New SqlConnection(ConfigurationManager.ConnectionStrings("TrylogycContext").ToString)
+            Dim query As String = " SELECT COUNT(*) FROM PAGOS p WHERE " &
+                " p.Estado IN (" & EstadosPagos.Aprobado & ", " & EstadosPagos.Demorado & "," & EstadosPagos.Creado & ") AND " &
+                " p.IdSocio = @idSocio AND " &
+                " p.IdConexion = @idConexion AND " &
+                " p.NumeroFactura = @numFact AND " &
+                " p.Importe = @importe "
+
+            Dim command As New SqlCommand(query, con)
+            command.Parameters.AddWithValue("@idSocio", idSocio)
+            command.Parameters.AddWithValue("@idConexion", idConexion)
+            command.Parameters.AddWithValue("@numFact", numFact)
+            command.Parameters.AddWithValue("@importe", importe)
+
+            Dim dA As New SqlDataAdapter()
+            Dim ds As New DataSet()
+            Dim i As Integer = 0
+            Dim sql As String = Nothing
+
+            Try
+                con.Open()
+                Dim reader As SqlDataReader = command.ExecuteReader()
+                While reader.Read()
+                    pagosCount = Convert.ToInt32(reader(0).ToString())
+                End While
+                reader.Close()
+                command.Dispose()
+                con.Close()
+                If pagosCount > 0 Then
+                    Return True
+                Else
+                    Return False
+                End If
+            Catch ex As Exception
+                Return False
             End Try
         End Function
     End Class

@@ -214,13 +214,6 @@
                         <div class="pull-left image">
                             <asp:Image ID="Image1" runat="server" class="img-circle" Height="75" Width="75" />
                         </div>
-                        <div class="pull-left info">
-                            <p>
-                                <asp:Label ID="Label1" runat="server" Text="Label"></asp:Label>
-                            </p>
-
-                            <a href="#"><i class="fa fa-circle text-success"></i> Online</a>
-                        </div>
                     </div>
                     <!-- search form -->
                     <!--<form action="#" method="get" class="sidebar-form">

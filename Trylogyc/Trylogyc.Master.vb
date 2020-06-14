@@ -27,12 +27,12 @@ Public Class Trylogyc
 
             Me.lblco1.Text = Session("conCount")
             Me.lblco1txt.Text = "Conexiones"
+
         Else
             Response.Redirect("~/login.aspx")
         End If
 
 
     End Sub
-
 
 End Class

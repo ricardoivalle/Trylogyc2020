@@ -74,6 +74,16 @@ Namespace Models
                 _ruta = value
             End Set
         End Property
+
+        Private _enviarFacturaEmail As Boolean
+        Public Property EnviarFacturaEmail() As Boolean
+            Get
+                Return _enviarFacturaEmail
+            End Get
+            Set(ByVal value As Boolean)
+                _enviarFacturaEmail = value
+            End Set
+        End Property
         'Public Function GetUsuario(ByVal IDUsuario As Int32) As Usuario
         '    Dim myContext As New TrylogycContext
         '    Dim users = myContext.GetUsuario

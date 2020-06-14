@@ -11,14 +11,5 @@ Option Strict On
 Option Explicit On
 
 
-Partial Public Class Admin
-    
-    '''<summary>
-    '''btnMigracion control.
-    '''</summary>
-    '''<remarks>
-    '''Auto-generated field.
-    '''To modify move field declaration from designer file to code-behind file.
-    '''</remarks>
-    Protected WithEvents btnMigracion As Global.System.Web.UI.WebControls.Button
+Partial Public Class PagoRechazado
 End Class

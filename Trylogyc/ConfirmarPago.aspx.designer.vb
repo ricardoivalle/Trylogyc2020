@@ -11,23 +11,23 @@ Option Strict On
 Option Explicit On
 
 
-Partial Public Class _Error
-    
+Partial Public Class ConfirmarPago
+
     '''<summary>
-    '''Label1 control.
+    '''btnVolver control.
     '''</summary>
     '''<remarks>
     '''Auto-generated field.
     '''To modify move field declaration from designer file to code-behind file.
     '''</remarks>
-    Protected WithEvents Label1 As Global.System.Web.UI.WebControls.Label
-    
+    Protected WithEvents btnVolver As Global.System.Web.UI.WebControls.Button
+
     '''<summary>
-    '''Label2 control.
+    '''btnContinuar control.
     '''</summary>
     '''<remarks>
     '''Auto-generated field.
     '''To modify move field declaration from designer file to code-behind file.
     '''</remarks>
-    Protected WithEvents Label2 As Global.System.Web.UI.WebControls.Label
+    Protected WithEvents btnContinuar As Global.System.Web.UI.WebControls.Button
 End Class

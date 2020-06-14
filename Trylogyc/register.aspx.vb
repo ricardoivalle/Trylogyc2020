@@ -19,6 +19,7 @@ Public Class register
                 Dim IDSocio As Int32
                 Dim IDConexion As Int32
                 Dim cntSocio As Int32
+                Dim aceptaFacturaMail As Boolean = aceptaEmail.Checked
                 IDSocio = Convert.ToInt32(Mid(codigo, 1, 6))
                 IDConexion = Convert.ToInt32(Mid(codigo, 8, 4))
                 'ir a la base y revisar que ese xmlSocio no tenga un usuario ya asignado.
@@ -43,7 +44,7 @@ Public Class register
                                     If r.Item(2) = cgp Then 'Para dicho socio y conexion que coincida el CGP
                                         'registrar usuario
                                         Dim dsnewUser As DataSet
-                                        dsnewUser = myContext.PutUsuario(email, IDSocio, IDConexion)
+                                        dsnewUser = myContext.PutUsuario(email, IDSocio, IDConexion, aceptaFacturaMail)
                                         If dsnewUser IsNot Nothing And dsnewUser.Tables.Count > 0 Then 'se insertó nuevo usuario y me devolvió el password
                                             send_reg_mail(email, dsnewUser.Tables(0).Rows(0).Item(1))
                                             lblError.Visible = True
@@ -112,7 +113,7 @@ Public Class register
                                     .Send(message)
                                     message.Dispose()
                                 Catch ex As Exception
-                                    'MsgBox(ex.Message)
+                                    Throw ex
                                 End Try
                                 Me.lblError.Visible = False
                                 Response.Write("<script>alert('Verifique su email para obtener sus datos de acceso.');</script>")
@@ -124,7 +125,8 @@ Public Class register
 
                 End With
             Catch ex As Exception
-                Response.Redirect("~/login.aspx")
+                Me.lblError.Visible = True
+                Me.lblError.Text = "Su usuario se registró exitosamente pero no pudimos enviar el mail de registro."
 
             End Try
         End If

@@ -1,24 +1,30 @@
 ﻿Imports Trylogyc.DAL
-Imports System.Xml
-Imports System.Linq
 Imports System.IO
 Imports System.Net
+Imports MercadoPago.Resources
+Imports MercadoPago.DataStructures.Preference
+Imports MercadoPago.Common
+Imports System.Globalization
+Imports System.Linq
 
 Public Class _Default
     Inherits System.Web.UI.Page
     Dim myContext = New TrylogycContext
     Dim sumtotal As Double
+    Public preferenceIDMP As String
+
     Protected Sub page_preinit(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.PreInit
         If Session("logueado") = True Then
         Else
             Response.Redirect("~/login.aspx")
         End If
+
     End Sub
     Protected Sub Page_Load(ByVal sender As Object, ByVal e As System.EventArgs) Handles Me.Load
+
         If Session("logueado") = True Then
             Me.divError.Visible = False
             If Not Page.IsPostBack Then
-
                 Dim daUser As DataSet = myContext.GetUsuario(Session("IDUsuario"))
                 If daUser.Tables(0).TableName = "Error" Then
                     Session("codError") = daUser.Tables(0).Rows(0).Item(0)
@@ -64,8 +70,15 @@ Public Class _Default
                     'Me.txtDeudatotal.Text = Format((sumtotal), "0.00")
 #End Region
                 End If
+
                 GridView1.DataBind()
+                'Ocultar/Mostrar columna "Pagar"
+                Dim displayPagar As Boolean = Convert.ToBoolean(ConfigurationManager.AppSettings("displayPagar"))
+                CType(GridView1.Columns.Cast(Of DataControlField)().Where(Function(fld) fld.HeaderText = "Pagar") _
+                .SingleOrDefault(), DataControlField).Visible = displayPagar
+
             Else
+                SelectedPreferenceId = String.Empty
                 If Session("logueado") = True Then
                 Else
                     Response.Redirect("~/login.aspx")
@@ -76,72 +89,9 @@ Public Class _Default
         End If
 
     End Sub
-    Private Sub readFacturas(ByVal xmlsocio As String, ByVal conexion As Int32)
-        Try
-            Dim dvFacturas As New DataView(Session("dtSaldo"))
-            Dim dtFacturas As New DataTable
-            Dim dvdtFacturas As New DataTable
-            For t = 0 To 10
-                dtFacturas.Columns.Add()
-            Next
-            If conexion = 0 Then
-                'dvFacturas.RowFilter = "Socio =" & xmlsocio
-                dvFacturas.Sort = "PERIODO DESC"
-                dvdtFacturas = dvFacturas.ToTable
-                For u = 0 To dvdtFacturas.Rows.Count - 1
-                    dtFacturas.Rows.Add()
-                    dtFacturas.Rows(u).Item(0) = Mid(dvdtFacturas.Rows(u).Item("Factura"), 11, (Len(dvdtFacturas.Rows(u).Item("Factura")) - 10))
-                    dtFacturas.Rows(u).Item(1) = dvdtFacturas.Rows(u).Item("Pto_Venta")
-                    dtFacturas.Rows(u).Item(2) = dvdtFacturas.Rows(u).Item("Letra")
-                    dtFacturas.Rows(u).Item(3) = dvdtFacturas.Rows(u).Item("Periodo")
-                    dtFacturas.Rows(u).Item(4) = dvdtFacturas.Rows(u).Item("Fecha_Emision")
-                    dtFacturas.Rows(u).Item(5) = dvdtFacturas.Rows(u).Item("Fecha_Vto")
-                    dtFacturas.Rows(u).Item(6) = dvdtFacturas.Rows(u).Item("Grupo_Fact")
-                    dtFacturas.Rows(u).Item(7) = dvdtFacturas.Rows(u).Item("Importe")
-                    dtFacturas.Rows(u).Item(8) = dvdtFacturas.Rows(u).Item("Factura")
-                    dtFacturas.Rows(u).Item(9) = dvdtFacturas.Rows(u).Item("Conexion")
-                    dtFacturas.Rows(u).Item(10) = "Información del Pago MP."
-                    'TODO: Para la fila 10, si la factura está en la tabla nueva a crear "Pagos", mostrar "Pago en proceso" y quizás darle un color.
-                    sumtotal = sumtotal + Convert.ToDouble(dvdtFacturas.Rows(u).Item("Importe"))
-                Next
-                'Me.txtDeudatotal.Text = Format((sumtotal), "0.00")
-                Me.GridView1.DataSource = ""
-                Me.GridView1.DataSource = dtFacturas
-                Me.GridView1.DataBind()
-                'Me.GridView1.Columns(9).Visible = False
-                'Me.GridView1.Columns(10).Visible = False
-            Else
-                dvFacturas.RowFilter = "Socio =" & xmlsocio
-                dvFacturas.RowFilter = "Conexion =" & conexion
-                dvFacturas.Sort = "periodo DESC"
-                dvdtFacturas = dvFacturas.ToTable
-                For u = 0 To dvdtFacturas.Rows.Count - 1
-                    dtFacturas.Rows.Add()
-                    dtFacturas.Rows(u).Item(0) = Mid(dvdtFacturas.Rows(u).Item("Factura"), 11, (Len(dvdtFacturas.Rows(u).Item("Factura")) - 10))
-                    dtFacturas.Rows(u).Item(1) = dvdtFacturas.Rows(u).Item("Pto_Venta")
-                    dtFacturas.Rows(u).Item(2) = dvdtFacturas.Rows(u).Item("Letra")
-                    dtFacturas.Rows(u).Item(3) = dvdtFacturas.Rows(u).Item("Periodo")
-                    dtFacturas.Rows(u).Item(4) = dvdtFacturas.Rows(u).Item("Fecha_Emision")
-                    dtFacturas.Rows(u).Item(5) = dvdtFacturas.Rows(u).Item("Fecha_Vto")
-                    dtFacturas.Rows(u).Item(6) = dvdtFacturas.Rows(u).Item("Grupo_Fact")
-                    dtFacturas.Rows(u).Item(7) = dvdtFacturas.Rows(u).Item("Importe")
-                    dtFacturas.Rows(u).Item(8) = dvdtFacturas.Rows(u).Item("Factura")
-                    dtFacturas.Rows(u).Item(9) = dvdtFacturas.Rows(u).Item("Conexion")
-                    dtFacturas.Rows(u).Item(10) = "Información del Pago MP."
-                    'TODO: Para la fila 10, si la factura está en la tabla nueva a crear "Pagos", mostrar "Pago en proceso" y quizás darle un color.
-                    sumtotal = sumtotal + Convert.ToDouble(dvdtFacturas.Rows(u).Item("Importe"))
-                Next
-                Me.GridView1.DataSource = ""
-                Me.GridView1.DataSource = dtFacturas
-                Me.GridView1.DataBind()
-                'Me.GridView1.Columns(9).Visible = False
-                'Me.GridView1.Columns(10).Visible = False
-            End If
-        Catch ex As Exception
 
-        End Try
-    End Sub
 
+#Region "Eventos"
     Protected Sub lstConexiones_SelectedIndexChanged(sender As Object, e As EventArgs) Handles lstConexiones.SelectedIndexChanged
         Me.divError.Visible = False
         Dim intSocio As Int32
@@ -199,13 +149,15 @@ Public Class _Default
             e.Row.Cells(10).ForeColor = Drawing.Color.Transparent
             e.Row.Cells(10).Visible = False
             e.Row.Cells(11).Visible = False
+            'Crear 1 preferencia de pago por fila:
+
         End If
     End Sub
     Protected Sub gridview1_rowcommand(sender As Object, e As CommandEventArgs) Handles GridView1.RowCommand
         If (e.CommandName = "cmdPDF2") Then
             Dim index1 As Integer = Convert.ToInt32(e.CommandArgument) 'captura el valor del índice de la fila
             Dim row1 As GridViewRow = GridView1.Rows(index1) 'crea un objeto row que contiene la fila del botón presionado.
-            Dim numfact As String = CType(row1.Cells(9), DataControlFieldCell).Text
+            Dim numfact As String = CType(row1.Cells(10), DataControlFieldCell).Text
             Dim filePDF As String = "~/PDF/" & LTrim(RTrim(numfact)) & ".pdf"
             Dim filePDF2 As String = "PDF/" & LTrim(RTrim(numfact)) & ".pdf"
             Try
@@ -215,10 +167,10 @@ Public Class _Default
                 'Read the file data into a Byte array
 
                 Dim myAddress As String = ""
-                If System.Configuration.ConfigurationManager.AppSettings("ftpAddress").ToString().Length < 1 Then
-                    myAddress = Server.MapPath("/PDF/")
+                If System.Configuration.ConfigurationManager.AppSettings("ftpAddress").ToString().Length <1 Then
+                    myAddress= Server.MapPath("/PDF/")
                 Else
-                    myAddress = System.Configuration.ConfigurationManager.AppSettings("ftpAddress").ToString()
+                    myAddress= System.Configuration.ConfigurationManager.AppSettings("ftpAddress").ToString()
                 End If
                 If (Not System.IO.Directory.Exists(Server.MapPath("~/_tmp"))) Then
                     System.IO.Directory.CreateDirectory(Server.MapPath("~/_tmp"))
@@ -312,13 +264,157 @@ Public Class _Default
                 Me.lblError.Text = "No se pudo recuperar el documento PDF."
                 Me.divError.Visible = True
             End Try
-
+        Else
+            If (e.CommandName.Equals("btnPagar")) Then
+                Dim index1 As Integer = Convert.ToInt32(e.CommandArgument) 'captura el valor del índice de la fila
+                Dim row1 As GridViewRow = GridView1.Rows(index1) 'crea un objeto row que contiene la fila del botón presionado.
+                Dim numfact As String = CType(row1.Cells(2), DataControlFieldCell).Text
+                Dim importe As String = CType(row1.Cells(9), DataControlFieldCell).Text
+                importeFactura = ConvertirCampoImporteADecimal(importe)
+                Dim Master As Trylogyc = CType(Me.Master, Trylogyc)
+                Dim idSocio As String = Convert.ToInt32(Session("xmlSocio")).ToString()
+                Dim idConexion As String = CType(row1.Cells(10), DataControlFieldCell).Text
+                Dim pagoEnProceso As Boolean = VerificarPagoEnProceso(idSocio, idConexion, numfact, importeFactura)
+                If pagoEnProceso = True Then
+                    Response.Redirect("~/ConfirmarPago.aspx?numfact=" & LTrim(RTrim(numfact)) & "&importe=" & importe & "&idSocio=" & idSocio & "&idConexion=" & idConexion)
+                Else
+                    Response.Redirect("~/Pagar.aspx?numfact=" & LTrim(RTrim(numfact)) & "&importe=" & importe & "&idSocio=" & idSocio & "&idConexion=" & idConexion)
+                End If
+            End If
         End If
 
 
     End Sub
-
     Protected Sub GridView1_SelectedIndexChanged(sender As Object, e As EventArgs) Handles GridView1.SelectedIndexChanged
 
     End Sub
+#End Region
+
+#Region "Métodos Privados"
+
+    Private Sub readFacturas(ByVal xmlsocio As String, ByVal conexion As Int32)
+        Try
+            Dim dvFacturas As New DataView(Session("dtSaldo"))
+            Dim dtFacturas As New DataTable
+            Dim dvdtFacturas As New DataTable
+            Dim importeFactura As Decimal
+
+            dtFacturas.Columns.Add("Nro_Factura")
+            dtFacturas.Columns.Add("Pto_Venta")
+            dtFacturas.Columns.Add("Letra")
+            dtFacturas.Columns.Add("Periodo")
+            dtFacturas.Columns.Add("Fecha_Emision")
+            dtFacturas.Columns.Add("Fecha_Vto")
+            dtFacturas.Columns.Add("Grupo_Fact")
+            dtFacturas.Columns.Add("Importe")
+            dtFacturas.Columns.Add("Factura")
+            dtFacturas.Columns.Add("Conexion")
+            dtFacturas.Columns.Add("Pagada")
+            dtFacturas.Columns.Add("IdPreferenciaPago")
+
+            If conexion = 0 Then
+                'dvFacturas.RowFilter = "Socio =" & xmlsocio
+                dvFacturas.Sort = "PERIODO DESC"
+                dvdtFacturas = dvFacturas.ToTable
+                For u = 0 To dvdtFacturas.Rows.Count - 1
+                    dtFacturas.Rows.Add()
+                    dtFacturas.Rows(u).Item("Nro_Factura") = Mid(dvdtFacturas.Rows(u).Item("Factura"), 11, (Len(dvdtFacturas.Rows(u).Item("Factura")) - 10))
+                    dtFacturas.Rows(u).Item("Pto_Venta") = dvdtFacturas.Rows(u).Item("Pto_Venta")
+                    dtFacturas.Rows(u).Item("Letra") = dvdtFacturas.Rows(u).Item("Letra")
+                    dtFacturas.Rows(u).Item("Periodo") = dvdtFacturas.Rows(u).Item("Periodo")
+                    dtFacturas.Rows(u).Item("Fecha_Emision") = dvdtFacturas.Rows(u).Item("Fecha_Emision")
+                    dtFacturas.Rows(u).Item("Fecha_Vto") = dvdtFacturas.Rows(u).Item("Fecha_Vto")
+                    dtFacturas.Rows(u).Item("Grupo_Fact") = dvdtFacturas.Rows(u).Item("Grupo_Fact")
+                    dtFacturas.Rows(u).Item("Importe") = dvdtFacturas.Rows(u).Item("Importe")
+                    dtFacturas.Rows(u).Item("Factura") = dvdtFacturas.Rows(u).Item("Factura")
+                    dtFacturas.Rows(u).Item("Conexion") = dvdtFacturas.Rows(u).Item("Conexion")
+                    dtFacturas.Rows(u).Item("Pagada") = dvdtFacturas.Rows(u).Item("Pagada")
+                    'TODO: Para la fila 10, si la factura está en la tabla nueva a crear "Pagos", mostrar "Pago en proceso" y quizás darle un color.
+                    sumtotal = sumtotal + Convert.ToDouble(dvdtFacturas.Rows(u).Item("Importe"))
+                Next
+                'Me.txtDeudatotal.Text = Format((sumtotal), "0.00")
+
+            Else
+                dvFacturas.RowFilter = "Socio =" & xmlsocio
+                dvFacturas.RowFilter = "Conexion =" & conexion
+                dvFacturas.Sort = "periodo DESC"
+                dvdtFacturas = dvFacturas.ToTable
+                For u = 0 To dvdtFacturas.Rows.Count - 1
+                    dtFacturas.Rows.Add()
+                    dtFacturas.Rows(u).Item("Nro_Factura") = Mid(dvdtFacturas.Rows(u).Item("Factura"), 11, (Len(dvdtFacturas.Rows(u).Item("Factura")) - 10))
+                    dtFacturas.Rows(u).Item("Pto_Venta") = dvdtFacturas.Rows(u).Item("Pto_Venta")
+                    dtFacturas.Rows(u).Item("Letra") = dvdtFacturas.Rows(u).Item("Letra")
+                    dtFacturas.Rows(u).Item("Periodo") = dvdtFacturas.Rows(u).Item("Periodo")
+                    dtFacturas.Rows(u).Item("Fecha_Emision") = dvdtFacturas.Rows(u).Item("Fecha_Emision")
+                    dtFacturas.Rows(u).Item("Fecha_Vto") = dvdtFacturas.Rows(u).Item("Fecha_Vto")
+                    dtFacturas.Rows(u).Item("Grupo_Fact") = dvdtFacturas.Rows(u).Item("Grupo_Fact")
+                    dtFacturas.Rows(u).Item("Importe") = dvdtFacturas.Rows(u).Item("Importe")
+                    dtFacturas.Rows(u).Item("Factura") = dvdtFacturas.Rows(u).Item("Factura")
+                    dtFacturas.Rows(u).Item("Conexion") = dvdtFacturas.Rows(u).Item("Conexion")
+                    dtFacturas.Rows(u).Item("Pagada") = "Información del Pago MP."
+                    'TODO: Para la fila 10, si la factura está en la tabla nueva a crear "Pagos", mostrar "Pago en proceso" y quizás darle un color.
+                    sumtotal = sumtotal + Convert.ToDouble(dvdtFacturas.Rows(u).Item("Importe"))
+                Next
+
+
+            End If
+
+            Me.GridView1.DataSource = ""
+            Me.GridView1.DataSource = dtFacturas
+            Me.GridView1.DataBind()
+        Catch ex As Exception
+
+        End Try
+    End Sub
+    Private Sub ReEvaluarYSetearMercadoPagoToken()
+        If (MercadoPago.SDK.AccessToken Is Nothing) Then
+            MercadoPago.SDK.SetAccessToken("TEST-803559796931547-060612-07b906157e8808e7d657beabf35fdc1d-229476782")
+        End If
+    End Sub
+    Private Function GenerarPreferenciaPagoMercadoPago(nroFactura As String, importeFactura As Decimal) As String
+        Dim importeAPagar As Decimal
+        Dim myPreference As New Preference()
+        myPreference.ClientId = "580430370"
+        Dim itemToAdd As New Item()
+        itemToAdd.Title = nroFactura
+        itemToAdd.Quantity = 1
+        itemToAdd.CurrencyId = CurrencyId.ARS
+        itemToAdd.UnitPrice = importeFactura
+        myPreference.Items.Add(itemToAdd)
+        Dim _backUrls As New BackUrls()
+        _backUrls.Success = Request.Url.GetLeftPart(UriPartial.Path) & "/PagoExitoso.aspx"
+        _backUrls.Failure = Request.Url.GetLeftPart(UriPartial.Path) & "/PagoRechazado.aspx"
+        _backUrls.Pending = Request.Url.GetLeftPart(UriPartial.Path) & "/PagoPendiente.aspx"
+        myPreference.BackUrls = _backUrls
+        myPreference.AutoReturn = AutoReturnType.approved
+        myPreference.Save()
+        GenerarPreferenciaPagoMercadoPago = myPreference.Id
+        Return myPreference.Id
+    End Function
+    Private Function ConvertirCampoImporteADecimal(ByVal cell As Object) As Decimal
+        Dim importeFactura As Decimal
+
+        If cell Is Nothing Or cell Is DBNull.Value Then
+            Session("txtError") = "Se produjo un error. Los montos de las facturas no tienen el formato correcto."
+            Response.Redirect("~/Error.aspx")
+        Else
+            If (Decimal.TryParse(cell,
+            NumberStyles.AllowDecimalPoint,
+            CultureInfo.CreateSpecificCulture("fr-FR"),
+            importeFactura) = False) Then
+                Session("txtError") = "Se produjo un error. Los montos de las facturas no tienen el formato correcto."
+                Response.Redirect("~/Error.aspx")
+            End If
+        End If
+
+        ConvertirCampoImporteADecimal = importeFactura
+        Return importeFactura
+    End Function
+
+    Private Function VerificarPagoEnProceso(ByVal idSocio As Int32, ByVal idConexion As Int32, ByVal numFact As String, ByVal importe As Decimal) As Boolean
+        Dim myContext As New TrylogycContext
+        Dim existePago As Boolean = myContext.GetPago(idSocio, idConexion, numFact, importe)
+        Return existePago
+    End Function
+#End Region
 End Class
